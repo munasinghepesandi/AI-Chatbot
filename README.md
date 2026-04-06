@@ -17,7 +17,7 @@ A lightweight web chat app powered by OpenRouter models.
 - script.js: Chat logic, API calls, model/image handling, and local storage
 
 ## Live Demo
-- Click on "simple-aichatbot.netlify.app"
+- Click on [simple-aichatbot.netlify.app]
 
 ## Notes
 - If need the API key, use "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" (if need)
