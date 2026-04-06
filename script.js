@@ -19,6 +19,7 @@ const apiKeyInput = document.getElementById('apiKeyInput');
 const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
 const newChatBtn = document.getElementById('newChatBtn');
 const chatHistory = document.getElementById('chatHistory');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 const modelSelect = document.getElementById('modelSelect');
 const imageInput = document.getElementById('imageInput');
 const uploadImageBtn = document.getElementById('uploadImageBtn');
@@ -72,6 +73,7 @@ function setupEventListeners() {
     saveApiKeyBtn.addEventListener('click', saveApiKey);
     modelSelect.addEventListener('change', saveSelectedModel);
     newChatBtn.addEventListener('click', startNewChat);
+    clearHistoryBtn.addEventListener('click', clearAllConversations);
     userInput.addEventListener('input', autoResize);
     uploadImageBtn.addEventListener('click', () => imageInput.click());
     imageInput.addEventListener('change', handleImageSelect);
@@ -142,12 +144,68 @@ function startNewChat(shouldClearComposer = true) {
 function loadChatHistory() {
     chatHistory.innerHTML = '';
     conversations.forEach(conv => {
-        const div = document.createElement('div');
-        div.className = 'cursor-pointer rounded-xl border border-slate-700 bg-slate-900/90 p-3 text-sm font-medium text-slate-200 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-500/40 hover:bg-slate-800 hover:text-white';
-        div.textContent = conv.title || 'New Chat';
-        div.addEventListener('click', () => loadConversation(conv.id));
-        chatHistory.appendChild(div);
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/90 p-2 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-500/40 hover:bg-slate-800';
+
+        const titleBtn = document.createElement('button');
+        titleBtn.type = 'button';
+        titleBtn.className = 'min-w-0 flex-1 truncate rounded-lg px-2 py-1.5 text-left text-sm font-medium text-slate-200 transition hover:text-white';
+        titleBtn.textContent = conv.title || 'New Chat';
+        titleBtn.title = conv.title || 'New Chat';
+        titleBtn.addEventListener('click', () => loadConversation(conv.id));
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'shrink-0 rounded-lg border border-slate-700 px-2 py-1 text-xs font-semibold text-slate-300 transition hover:border-red-500/60 hover:bg-red-500/10 hover:text-red-300';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.title = 'Delete this chat';
+        deleteBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            deleteConversation(conv.id);
+        });
+
+        row.appendChild(titleBtn);
+        row.appendChild(deleteBtn);
+        chatHistory.appendChild(row);
     });
+}
+
+function deleteConversation(convId) {
+    const targetConversation = conversations.find((conversation) => conversation.id === convId);
+    const title = targetConversation?.title || 'this chat';
+    const shouldDelete = confirm(`Delete "${title}"? This cannot be undone.`);
+    if (!shouldDelete) {
+        return;
+    }
+
+    conversations = conversations.filter((conversation) => conversation.id !== convId);
+    localStorage.setItem('conversations', JSON.stringify(conversations));
+
+    if (currentConversationId === convId) {
+        currentConversationId = null;
+        currentMessages = [];
+        renderMessages();
+    }
+
+    loadChatHistory();
+}
+
+function clearAllConversations() {
+    if (conversations.length === 0) {
+        return;
+    }
+
+    const shouldDeleteAll = confirm('Delete all saved chats? This cannot be undone.');
+    if (!shouldDeleteAll) {
+        return;
+    }
+
+    conversations = [];
+    localStorage.setItem('conversations', JSON.stringify(conversations));
+    currentConversationId = null;
+    currentMessages = [];
+    renderMessages();
+    loadChatHistory();
 }
 
 function loadConversation(convId) {
