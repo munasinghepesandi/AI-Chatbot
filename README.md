@@ -2,7 +2,7 @@
 
 A lightweight web chat app powered by OpenRouter models.
 
-<img scr=""/>
+<img src="output.png"/>
 
 ## Features
 - Chat with multiple OpenRouter models
