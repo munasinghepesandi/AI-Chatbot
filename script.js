@@ -1,17 +1,10 @@
-// Configuration
 const API_KEY_STORAGE = 'openrouter_api_key';
 const MODEL_STORAGE = 'openrouter_model_id';
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_MODEL_ID = 'deepseek/deepseek-chat-v3-0324:free';
+const DEFAULT_MODEL_ID = 'openrouter/free';
 const VISION_MODELS = [
-    'meta-llama/llama-3.2-11b-vision-instruct:free',
     'nvidia/nemotron-nano-12b-v2-vl:free',
-    'google/gemma-3-27b-it:free',
-    'google/gemma-3-12b-it:free',
-    'google/gemma-3-4b-it:free',
-    'thinkingmachines/inkling-small:free',
-    'dots-studio/dots-3-note-preview:free',
-    'liquid/lfm-2.5-2.6b:free'
+    'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'
 ];
 
 // DOM Elements
@@ -37,6 +30,27 @@ let conversations = JSON.parse(localStorage.getItem('conversations') || '[]');
 let currentConversationId = null;
 let isLoading = false;
 let selectedImageDataUrl = null;
+let toastTimeout;
+
+function showToast(message, isError = true) {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+    toastMessage.textContent = message;
+    
+    if (isError) {
+        toast.style.background = '#ef4444';
+        toast.querySelector('.toast-icon').textContent = '⚠️';
+    } else {
+        toast.style.background = '#10b981';
+        toast.querySelector('.toast-icon').textContent = '✅';
+    }
+
+    toast.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 4500);
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -252,14 +266,14 @@ async function sendMessage() {
 
     const selectedModel = getSelectedModel();
     if (hasImage && !isVisionModel(selectedModel)) {
-        alert('The selected model is text-only. Please choose a vision model (for example: meta-llama/llama-3.2-11b-vision-instruct:free or nvidia/nemotron-nano-12b-v2-vl:free).');
+        showToast('The selected model is text-only. Please choose a ✦ Vision model from the dropdown.');
         modelSelect.focus();
         return;
     }
 
     const apiKey = getApiKey();
     if (!apiKey) {
-        alert('Please enter your OpenRouter API key first');
+        showToast('Please enter your OpenRouter API key in the settings first');
         apiKeyInput.focus();
         return;
     }
@@ -338,12 +352,26 @@ async function sendMessage() {
         saveChatHistory();
     } catch (error) {
         console.error('Error:', error);
-        // Remove typing indicator on error
         const typingIndicator = document.getElementById('typingIndicator');
         if (typingIndicator) typingIndicator.remove();
-        alert('Error: ' + error.message);
-        // Remove failed user message
-        currentMessages.pop();
+        
+        let errorMsg = error.message || 'Unknown error occurred.';
+        if (errorMsg.toLowerCase().includes('provider') || errorMsg.toLowerCase().includes('timeout') || errorMsg.toLowerCase().includes('unavailable')) {
+            errorMsg = 'This model is currently busy. Please select "Auto Free Model" from the dropdown.';
+        }
+        showToast(errorMsg);
+        
+        // Restore user message to input so they don't lose it
+        const failedMsg = currentMessages.pop();
+        if (failedMsg && failedMsg.role === 'user' && !userInput.value) {
+            const text = typeof failedMsg.content === 'string' 
+                ? failedMsg.content 
+                : failedMsg.content.find(p => p.type === 'text')?.text;
+            if (text) {
+                userInput.value = text;
+                autoResize();
+            }
+        }
     } finally {
         isLoading = false;
         sendBtn.disabled = false;
@@ -414,13 +442,13 @@ function handleImageSelect(event) {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-        alert('Please select a valid image file.');
+        showToast('Please select a valid image file.');
         clearSelectedImage();
         return;
     }
 
     if (file.size > 4 * 1024 * 1024) {
-        alert('Image is too large. Please upload an image under 4MB.');
+        showToast('Image is too large. Please upload an image under 4MB.');
         clearSelectedImage();
         return;
     }

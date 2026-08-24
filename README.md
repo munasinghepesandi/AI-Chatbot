@@ -18,6 +18,7 @@ A lightweight web chat app powered by OpenRouter models.
 
 ## Live Demo
 - Click on [simple-aichatbot.netlify.app]
+- Give the API key as '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' and save
 
 ## Notes
 - Get your API key from [openrouter.ai/keys](https://openrouter.ai/keys)
