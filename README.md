@@ -20,11 +20,12 @@ A lightweight web chat app powered by OpenRouter models.
 - Click on [simple-aichatbot.netlify.app]
 
 ## Notes
-- If need the API key, use "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" (if need)
-- Save the API key from the bottom of left side button (if need the API key)
-- API key and conversation history are stored in your browser local storage.
-- Uploaded images are sent to the selected model as data URLs.
-- Large images (over 4MB) are blocked in the UI.
+- Get your API key from [openrouter.ai/keys](https://openrouter.ai/keys)
+- Save the API key from the bottom-left settings panel
+- API key and conversation history are stored in your browser's local storage
+- Uploaded images are sent to the selected model as base64 data URLs
+- Large images (over 4MB) are blocked in the UI
+- Free models are subject to rate limits (20 req/min, ~50 req/day on new accounts)
 
 ## Future Improvements
 - Add markdown rendering for assistant responses

@@ -2,13 +2,16 @@
 const API_KEY_STORAGE = 'openrouter_api_key';
 const MODEL_STORAGE = 'openrouter_model_id';
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_MODEL_ID = 'stepfun/step-3.5-flash:free';
+const DEFAULT_MODEL_ID = 'deepseek/deepseek-chat-v3-0324:free';
 const VISION_MODELS = [
     'meta-llama/llama-3.2-11b-vision-instruct:free',
     'nvidia/nemotron-nano-12b-v2-vl:free',
     'google/gemma-3-27b-it:free',
     'google/gemma-3-12b-it:free',
-    'google/gemma-3-4b-it:free'
+    'google/gemma-3-4b-it:free',
+    'thinkingmachines/inkling-small:free',
+    'dots-studio/dots-3-note-preview:free',
+    'liquid/lfm-2.5-2.6b:free'
 ];
 
 // DOM Elements
@@ -130,11 +133,14 @@ function startNewChat(shouldClearComposer = true) {
         clearSelectedImage();
     }
     messagesContainer.innerHTML = `
-        <div class="flex justify-center items-center h-full">
-            <div class="text-center text-slate-300">
-                <h2 class="title-font mb-2 text-2xl font-bold sm:text-3xl">How can I help you today?</h2>
-                <p class="text-sm sm:text-base text-slate-400">Upload images, switch models, and chat naturally.</p>
+        <div class="welcome-state">
+            <div class="welcome-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
             </div>
+            <h2 class="welcome-title">How can I help you today?</h2>
+            <p class="welcome-sub">Upload images, switch models, and chat naturally.</p>
         </div>
     `;
     userInput.focus();
@@ -145,19 +151,19 @@ function loadChatHistory() {
     chatHistory.innerHTML = '';
     conversations.forEach(conv => {
         const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/90 p-2 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-500/40 hover:bg-slate-800';
+        row.className = 'history-item';
 
         const titleBtn = document.createElement('button');
         titleBtn.type = 'button';
-        titleBtn.className = 'min-w-0 flex-1 truncate rounded-lg px-2 py-1.5 text-left text-sm font-medium text-slate-200 transition hover:text-white';
+        titleBtn.className = 'history-title-btn';
         titleBtn.textContent = conv.title || 'New Chat';
         titleBtn.title = conv.title || 'New Chat';
         titleBtn.addEventListener('click', () => loadConversation(conv.id));
 
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
-        deleteBtn.className = 'shrink-0 rounded-lg border border-slate-700 px-2 py-1 text-xs font-semibold text-slate-300 transition hover:border-red-500/60 hover:bg-red-500/10 hover:text-red-300';
-        deleteBtn.textContent = 'Delete';
+        deleteBtn.className = 'history-delete-btn';
+        deleteBtn.textContent = '✕';
         deleteBtn.title = 'Delete this chat';
         deleteBtn.addEventListener('click', (event) => {
             event.stopPropagation();
@@ -279,6 +285,23 @@ async function sendMessage() {
     renderMessages();
     saveChatHistory();
 
+    // Add typing indicator
+    const typingEl = document.createElement('div');
+    typingEl.id = 'typingIndicator';
+    typingEl.className = 'msg-row';
+    typingEl.innerHTML = `
+        <div class="msg-avatar ai-avatar">&#x2728;</div>
+        <div class="msg-bubble ai-bubble">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+    `;
+    messagesContainer.appendChild(typingEl);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
     try {
         // Call OpenRouter API
         const response = await fetch(OPENROUTER_API_URL, {
@@ -315,6 +338,9 @@ async function sendMessage() {
         saveChatHistory();
     } catch (error) {
         console.error('Error:', error);
+        // Remove typing indicator on error
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) typingIndicator.remove();
         alert('Error: ' + error.message);
         // Remove failed user message
         currentMessages.pop();
@@ -328,21 +354,25 @@ async function sendMessage() {
 function renderMessages() {
     if (currentMessages.length === 0) {
         messagesContainer.innerHTML = `
-            <div class="flex justify-center items-center h-full">
-                <div class="text-center text-slate-300">
-                    <h2 class="title-font mb-2 text-2xl font-bold sm:text-3xl">How can I help you today?</h2>
-                    <p class="text-sm sm:text-base text-slate-400">Upload images, switch models, and chat naturally.</p>
+            <div class="welcome-state">
+                <div class="welcome-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
                 </div>
+                <h2 class="welcome-title">How can I help you today?</h2>
+                <p class="welcome-sub">Upload images, switch models, and chat naturally.</p>
             </div>
         `;
         return;
     }
 
     messagesContainer.innerHTML = currentMessages.map(msg => `
-        <div class="flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}">
-            <div class="max-w-2xl ${msg.role === 'user' 
-                ? 'rounded-2xl rounded-tr-none bg-gradient-to-r from-cyan-500 to-sky-500 text-white shadow-lg shadow-cyan-500/30' 
-                : 'rounded-2xl rounded-tl-none border border-slate-700 bg-slate-900 text-slate-100 shadow-sm'} px-4 py-3">
+        <div class="msg-row ${msg.role === 'user' ? 'user-row' : ''}">
+            <div class="msg-avatar ${msg.role === 'user' ? 'user-avatar' : 'ai-avatar'}">
+                ${msg.role === 'user' ? 'You' : '&#x2728;'}
+            </div>
+            <div class="msg-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}">
                 ${renderMessageContent(msg.content)}
             </div>
         </div>
@@ -400,7 +430,7 @@ function handleImageSelect(event) {
         selectedImageDataUrl = reader.result;
         imagePreview.src = selectedImageDataUrl;
         imageName.textContent = file.name;
-        imagePreviewContainer.classList.remove('hidden');
+        imagePreviewContainer.classList.add('visible');
     };
     reader.readAsDataURL(file);
 }
@@ -410,7 +440,7 @@ function clearSelectedImage() {
     imageInput.value = '';
     imagePreview.src = '';
     imageName.textContent = '';
-    imagePreviewContainer.classList.add('hidden');
+    imagePreviewContainer.classList.remove('visible');
 }
 
 function buildUserMessageContent(text, imageDataUrl) {
@@ -536,22 +566,22 @@ function normalizeLoadedMessages(messages) {
 
 function renderMessageContent(content) {
     if (typeof content === 'string') {
-        return `<p class="whitespace-pre-wrap text-sm">${escapeHtml(content)}</p>`;
+        return `<p>${escapeHtml(content)}</p>`;
     }
 
     if (!Array.isArray(content)) {
-        return '<p class="whitespace-pre-wrap text-sm"></p>';
+        return '<p></p>';
     }
 
     return content.map((part) => {
         if (part.type === 'text') {
-            return `<p class="whitespace-pre-wrap text-sm mb-2">${escapeHtml(part.text || '')}</p>`;
+            return `<p>${escapeHtml(part.text || '')}</p>`;
         }
         if (part.type === 'image_url' && part.image_url?.url) {
             if (!part.image_url.url.startsWith('data:image/')) {
-                return '<p class="whitespace-pre-wrap text-sm italic opacity-80">[Image uploaded]</p>';
+                return '<p style="font-style:italic;opacity:0.75">[Image uploaded]</p>';
             }
-            return `<img src="${escapeHtmlAttribute(part.image_url.url)}" alt="Uploaded image" class="max-w-xs rounded-lg border border-slate-700">`;
+            return `<img src="${escapeHtmlAttribute(part.image_url.url)}" alt="Uploaded image">`;
         }
         return '';
     }).join('');
