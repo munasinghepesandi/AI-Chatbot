@@ -59,6 +59,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSelectedModel();
     setupEventListeners();
     loadChatHistory();
+
+    if (!getApiKey()) {
+        setTimeout(() => {
+            showToast('Interview API Key: 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', false);
+        }, 1000);
+    }
+
 });
 
 function migrateStoredConversations() {
