@@ -52,6 +52,29 @@ function showToast(message, isError = true) {
     }, 4500);
 }
 
+function showToast(message, isError = true) {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+    toastMessage.innerHTML = message; // innerHTML පාවිච්චි කළා format කරන්න ලේසි වෙන්න
+    
+    if (isError) {
+        toast.style.border = '1px solid #ef4444';
+        toast.querySelector('.toast-icon').textContent = '⚠️';
+    } else {
+        toast.style.border = '1px solid #7c3aed';
+        toast.querySelector('.toast-icon').textContent = '💡';
+    }
+    toast.classList.add('show');
+    clearTimeout(toastTimeout);
+    
+    // Error එකක් නම් විතරක් තත්පර 5න් මැකෙන්න හදනවා (API key එක මැකෙන්නේ නෑ)
+    if (isError) {
+        toastTimeout = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 5000);
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     migrateStoredConversations();
@@ -59,13 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSelectedModel();
     setupEventListeners();
     loadChatHistory();
-
+    
     if (!getApiKey()) {
         setTimeout(() => {
-            showToast('Interview API Key: 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', false);
-        }, 1000);
+           
+            showToast('Please copy and use this API Key:<br><span style="color: #a78bfa; font-family: monospace; user-select: all; font-size: 13px; display: inline-block; margin-top: 10px; background: #0a0a16; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">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</span>', false);
+        }, 1500);
     }
-
 });
 
 function migrateStoredConversations() {
