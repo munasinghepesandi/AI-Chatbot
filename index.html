@@ -74,6 +74,7 @@
         display: grid;
         grid-template-columns: var(--sidebar-w) 1fr;
         height: 100vh;
+        min-height: 0;
         overflow: hidden;
         position: relative;
     }
@@ -303,6 +304,8 @@
     .chat-main {
         position: relative; z-index: 2;
         display: flex; flex-direction: column;
+        min-width: 0;
+        min-height: 0;
         overflow: hidden;
     }
 
@@ -316,6 +319,16 @@
         backdrop-filter: blur(12px);
     }
     .header-left { display: flex; align-items: center; gap: 10px; }
+    #mobileMenuBtn {
+        display: none;
+        width: 36px; height: 36px;
+        align-items: center; justify-content: center;
+        border-radius: var(--radius-sm);
+        background: var(--bg-card);
+        border: 1px solid var(--border-bright);
+        color: var(--text-secondary);
+    }
+    #mobileMenuBtn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; }
     .chat-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
     .header-badge {
         display: flex; align-items: center; gap: 6px;
@@ -418,6 +431,7 @@
 
     .msg-bubble {
         max-width: min(660px, 78%);
+        min-width: 0;
         padding: 11px 15px;
         font-size: 14px;
         line-height: 1.68;
@@ -575,11 +589,55 @@
     ===================================================== */
     @media (max-width: 720px) {
         .app-shell { grid-template-columns: 1fr; }
-        .sidebar { display: none; }
-        #messagesContainer { padding: 16px; }
-        .input-area { padding: 12px 16px; }
-        .chat-header { padding: 0 16px; }
+        .sidebar {
+            display: flex;
+            position: fixed;
+            inset: 0 auto 0 0;
+            width: min(86vw, 320px);
+            transform: translateX(-105%);
+            transition: transform 0.25s ease;
+            box-shadow: 18px 0 40px rgba(0,0,0,0.35);
+        }
+        .sidebar.is-open { transform: translateX(0); }
+        .chat-header { height: 56px; padding: 0 12px; }
+        #mobileMenuBtn { display: inline-flex; }
+        .header-left { gap: 8px; min-width: 0; }
+        .chat-title { white-space: nowrap; }
+        .header-badge { padding: 4px 8px; font-size: 10px; }
+        #messagesContainer { padding: 16px 12px; gap: 14px; }
+        .welcome-state { padding: 28px 8px; gap: 11px; }
+        .welcome-title { font-size: clamp(19px, 6vw, 22px); }
+        .welcome-sub { max-width: 290px; }
+        .welcome-chip { padding: 7px 11px; }
+        .msg-row { gap: 7px; }
+        .msg-avatar { width: 28px; height: 28px; }
+        .msg-bubble { max-width: calc(100% - 35px); padding: 10px 12px; font-size: 13px; }
+        .msg-bubble img { max-width: 100%; height: auto; }
+        .input-area { padding: 10px 12px 11px; gap: 8px; }
+        .input-row { gap: 7px; }
+        #uploadImageBtn, #sendBtn { width: 42px; height: 42px; }
+        #userInput { min-height: 42px; padding: 10px 12px; font-size: 16px; }
+        .input-footer { font-size: 10px; }
+        #toast { width: calc(100% - 24px); padding: 16px; gap: 10px; }
     }
+
+    @media (max-width: 380px) {
+        .header-badge { display: none; }
+        .welcome-icon { width: 58px; height: 58px; border-radius: 18px; }
+        .welcome-icon svg { width: 28px; height: 28px; }
+        .welcome-chips { gap: 6px; }
+        .welcome-chip { font-size: 11px; }
+        #uploadImageBtn, #sendBtn { width: 38px; height: 38px; }
+    }
+
+    #mobileMenuBackdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.52);
+        z-index: 1;
+    }
+    #mobileMenuBackdrop.is-visible { display: block; }
     
     /* — Toast Notification (Dark & Centered) — */
     
@@ -631,6 +689,8 @@
     <div class="dot-grid"></div>
 
     <div class="app-shell">
+
+        <div id="mobileMenuBackdrop"></div>
 
         <!-- ======================================================
              SIDEBAR
@@ -708,6 +768,9 @@
             <!-- Header -->
             <div class="chat-header">
                 <div class="header-left">
+                    <button id="mobileMenuBtn" type="button" title="Open menu" aria-label="Open menu" aria-expanded="false">
+                        <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+                    </button>
                     <span class="chat-title">Chat</span>
                 </div>
                 <div class="header-badge">

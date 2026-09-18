@@ -23,6 +23,9 @@ const imagePreviewContainer = document.getElementById('imagePreviewContainer');
 const imagePreview = document.getElementById('imagePreview');
 const imageName = document.getElementById('imageName');
 const removeImageBtn = document.getElementById('removeImageBtn');
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const mobileMenuBackdrop = document.getElementById('mobileMenuBackdrop');
+const sidebar = document.querySelector('.sidebar');
 
 // State
 let currentMessages = [];
@@ -125,6 +128,20 @@ function setupEventListeners() {
     uploadImageBtn.addEventListener('click', () => imageInput.click());
     imageInput.addEventListener('change', handleImageSelect);
     removeImageBtn.addEventListener('click', clearSelectedImage);
+    mobileMenuBtn?.addEventListener('click', toggleMobileMenu);
+    mobileMenuBackdrop?.addEventListener('click', closeMobileMenu);
+}
+
+function toggleMobileMenu() {
+    const isOpen = sidebar.classList.toggle('is-open');
+    mobileMenuBackdrop.classList.toggle('is-visible', isOpen);
+    mobileMenuBtn.setAttribute('aria-expanded', String(isOpen));
+}
+
+function closeMobileMenu() {
+    sidebar.classList.remove('is-open');
+    mobileMenuBackdrop.classList.remove('is-visible');
+    mobileMenuBtn.setAttribute('aria-expanded', 'false');
 }
 
 function autoResize() {
